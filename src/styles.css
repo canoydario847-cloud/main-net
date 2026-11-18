@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #0e0d0c;
+  --color-surface: #161513;
+  --color-elevated: #1e1c1a;
+  --color-fg: #f3f1ec;
+  --color-muted: #a39e96;
+  --color-subtle: #726e67;
+  --color-line: #2a2826;
+  --color-accent: #d5d8df;
+  --color-accent-fg: #141311;
+  --color-up: #8aa394;
+  --color-down: #c08b84;
+  --color-watch: #c2b295;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+}
+
+@layer components {
+  .live-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-up);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .live-dot {
+      animation: live-pulse 1.8s ease-in-out infinite;
+    }
+  }
+
+  .sheet-panel {
+    width: 100%;
+  }
+
+  @media (min-width: 48rem) {
+    .sheet-panel {
+      width: 28rem;
+    }
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
