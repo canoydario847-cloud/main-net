@@ -1,38 +1,28 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Search, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { usePins, type Pin } from "@/mainnet/pins";
+import { usePins } from "@/mainnet/pins";
 import { loadSnapshot } from "@/mainnet/snapshot";
 import {
   INITIAL_TAPE,
-  ageLabel,
   ageOf,
-  bookFor,
-  compactUsd,
-  feeUsd,
-  gasLabel,
-  integer,
-  intervalLabel,
   makeSettlement,
   mergeNets,
-  money,
-  native,
   netById,
-  pct,
-  pressure,
-  shortId,
-  tipOf,
   type NetId,
   type NetView,
   type Settlement,
   type Snapshot,
 } from "@/mainnet/model";
+import { Cost } from "./cost";
+import { Detail } from "./detail";
+import { Networks } from "./networks";
+import { Status } from "./status";
+import { Tape } from "./tape";
+import { Trace } from "./trace";
+import type { Selection, Size } from "./types";
 
 type View = "networks" | "tape" | "cost" | "trace";
-type Size = "transfer" | "call";
-type Selection = { kind: "net"; id: NetId } | { kind: "tx"; hash: string } | null;
 
 const VIEWS: { id: View; label: string }[] = [
   { id: "networks", label: "Networks" },
@@ -168,10 +158,19 @@ export function Desk() {
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
         {view === "networks" ? (
-          <Networks nets={nets} now={now} onOpen={(id) => setSelection({ kind: "net", id })} />
+          <Networks
+            nets={nets}
+            now={now}
+            onOpen={(id) => setSelection({ kind: "net", id })}
+          />
         ) : null}
         {view === "tape" ? (
-          <Tape rows={filteredTape} nets={nets} pins={shownPins} onOpen={(hash) => setSelection({ kind: "tx", hash })} />
+          <Tape
+            rows={filteredTape}
+            nets={nets}
+            pins={shownPins}
+            onOpen={(hash) => setSelection({ kind: "tx", hash })}
+          />
         ) : null}
         {view === "cost" ? (
           <Cost nets={nets} size={size} onSize={setSize} onOpen={(id) => setSelection({ kind: "net", id })} />
@@ -210,81 +209,21 @@ export function Desk() {
   );
 }
 
-function Status({
-  link,
-  now,
-  fetchedAt,
-}: {
-  link: "sync" | "linked" | "card";
-  now: number | null;
-  fetchedAt: number | null;
-}) {
-  const label = link === "linked" ? "Linked" : link === "card" ? "Desk card" : "Syncing";
-  const age =
-    link === "linked" && now != null && fetchedAt != null ? ageLabel((now - fetchedAt) / 1000) : null;
-  return (
-    <div className="flex min-h-11 shrink-0 items-center gap-2 rounded-sm border border-line bg-surface px-3">
-      <span className={cn("live-dot", link !== "linked" && "bg-watch")} aria-hidden="true" />
-      <span className="text-sm text-fg">
-        {label}
-        {age ? <span className="text-muted"> · {age}</span> : null}
-      </span>
-    </div>
-  );
-}
 
-function Networks({
-  nets,
-  now,
-  onOpen,
-}: {
-  nets: NetView[];
-  now: number | null;
-  onOpen: (id: NetId) => void;
-}) {
-  const ranked = nets
-    .map((net) => ({ net, fee: feeUsd(net, "transfer") }))
-    .filter((row): row is { net: NetView; fee: number } => row.fee != null)
-    .sort((a, b) => a.fee - b.fee);
-  const cheapest = ranked[0];
-  const deepest = [...nets].sort((a, b) => (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0))[0];
-  const hot = nets.filter((net) => pressure(net) !== "nominal");
-  return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h2 className="font-display text-2xl font-medium tracking-tight">Networks</h2>
-        <p className="mt-1 text-sm text-muted">Tips advance on each network’s block interval between reads.</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Cheapest transfer" value={cheapest ? money(cheapest.fee) : "—"} detail={cheapest ? cheapest.net.name : "Waiting on fees"} onClick={cheapest ? () => onOpen(cheapest.net.id) : undefined} />
-        <Stat label="Deepest pool" value={deepest ? compactUsd(deepest.tvlUsd) : "—"} detail={deepest ? deepest.name : "—"} onClick={deepest ? () => onOpen(deepest.id) : undefined} />
-        <Stat label="Pressure" value={hot.length === 0 ? "Clear" : String(hot.length)} detail={hot.length === 0 ? "All nominal" : hot.map((net) => net.name).join(", ")} />
-      </div>
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
-        <div className="hidden grid-cols-6 gap-4 border-b border-line px-4 py-3 text-xs text-subtle md:grid">
-          <span>Network</span><span>Spot</span><span>Tip</span><span>Transfer</span><span>TVL</span><span>State</span>
-        </div>
-        <ul>
-          {nets.map((net) => (
-            <li key={net.id} className="border-b border-line last:border-b-0">
-              <button type="button" onClick={() => onOpen(net.id)} className="grid w-full grid-cols-2 gap-x-4 gap-y-2 px-4 py-4 text-left transition-colors duration-150 hover:bg-elevated md:grid-cols-6 md:items-center">
-                <span className="col-span-2 md:col-span-1">
-                  <span className="block text-sm font-medium">{net.name}</span>
-                  <span className="text-xs text-subtle">{net.family} · {net.asset}</span>
-                </span>
-                <Field label="Spot" className="md:block">
-                  <span className="tabular-nums">{money(net.price)}</span>
-                  <span className={cn("ml-2 text-xs tabular-nums", changeClass(net.changePct))}>{pct(net.changePct)}</span>
-                </Field>
-                <Field label="Tip"><span className="tabular-nums">{integer(tipOf(net, now))}</span></Field>
-                <Field label="Transfer"><span className="tabular-nums">{money(feeUsd(net, "transfer"))}</span></Field>
-                <Field label="TVL"><span className="tabular-nums">{compactUsd(net.tvlUsd)}</span></Field>
-                <span className="col-span-2 md:col-span-1"><Pressure net={net} /></span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
+function matches(row: Settlement, nets: NetView[], needle: string): boolean {
+  if (!needle) return true;
+  const net = netById(nets, row.net);
+  const hay = [
+    row.hash,
+    row.from,
+    row.to,
+    row.fromLabel,
+    row.toLabel,
+    row.method,
+    net.name,
+    net.asset,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(needle);
 }
