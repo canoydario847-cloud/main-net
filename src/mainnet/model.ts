@@ -143,10 +143,10 @@ export function pressure(net: NetView): "nominal" | "watch" | "hot" {
 
 export function gasLabel(net: NetView): string {
   if (net.id === "btc") {
-    return net.satPerVb == null ? "\u2014" : `${net.satPerVb.toFixed(1)} sat/vB`;
+    return net.satPerVb == null ? "—" : `${net.satPerVb.toFixed(1)} sat/vB`;
   }
   if (net.id === "sol") return "5,000 lamports";
-  if (net.gasWei == null) return "\u2014";
+  if (net.gasWei == null) return "—";
   const gwei = net.gasWei / 1e9;
   const digits = gwei >= 10 ? 1 : gwei >= 1 ? 2 : 4;
   const unit = net.id === "avax" ? "nAVAX" : "gwei";
@@ -161,7 +161,7 @@ export function intervalLabel(ms: number): string {
 }
 
 export function money(n: number | null): string {
-  if (n == null || !Number.isFinite(n)) return "\u2014";
+  if (n == null || !Number.isFinite(n)) return "—";
   const abs = Math.abs(n);
   let maximumFractionDigits = 6;
   let minimumFractionDigits = 2;
@@ -184,7 +184,7 @@ export function money(n: number | null): string {
 }
 
 export function compactUsd(n: number | null): string {
-  if (n == null || !Number.isFinite(n)) return "\u2014";
+  if (n == null || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -194,12 +194,12 @@ export function compactUsd(n: number | null): string {
 }
 
 export function integer(n: number | null): string {
-  if (n == null || !Number.isFinite(n)) return "\u2014";
+  if (n == null || !Number.isFinite(n)) return "—";
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(n);
 }
 
 export function pct(n: number | null): string {
-  if (n == null || !Number.isFinite(n)) return "\u2014";
+  if (n == null || !Number.isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return `${sign}${n.toFixed(2)}%`;
 }
@@ -218,7 +218,7 @@ export function ageLabel(sec: number): string {
 
 export function shortId(value: string): string {
   if (value.length <= 18) return value;
-  return `${value.slice(0, 8)}\u2026${value.slice(-6)}`;
+  return `${value.slice(0, 8)}…${value.slice(-6)}`;
 }
 
 export function bookFor(id: NetId): BookEntry[] {
